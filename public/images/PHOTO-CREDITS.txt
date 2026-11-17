@@ -1,0 +1,57 @@
+분실물 키오스크 사진 출처
+========================
+
+사진은 Wikimedia Commons에서 내려받아 이 프로젝트에 포함했습니다.
+웹 화면에서 외부 이미지 서버를 호출하지 않습니다. 표시용으로 긴 변을
+최대 1000px로 줄이고 JPEG 품질을 조정했습니다.
+
+텀블러
+------
+tumbler-metal.jpg
+원본: Metal Water Bottles.jpeg — Amraepowell
+https://commons.wikimedia.org/wiki/File:Metal_Water_Bottles.jpeg
+CC0 1.0 Universal
+
+tumbler-niksun.jpg
+원본: Niksun stainless steel water bottle.jpg — Jonathan Schilling
+https://commons.wikimedia.org/wiki/File:Niksun_stainless_steel_water_bottle.jpg
+CC BY-SA 4.0
+
+tumbler-steel.jpg
+원본: Stainless Steel Water Bottle.jpg — Gannu03
+https://commons.wikimedia.org/wiki/File:Stainless_Steel_Water_Bottle.jpg
+CC BY-SA 4.0
+
+의류
+----
+clothing-hoodie.jpg
+원본: Hoodie m7agar.jpg — YoussefTahoun
+https://commons.wikimedia.org/wiki/File:Hoodie_m7agar.jpg
+CC0 1.0 Universal
+
+clothing-sonoma.jpg
+원본: Sonoma Raceway hoodie - June 2023 - Sarah Stierch.jpg — Missvain
+https://commons.wikimedia.org/wiki/File:Sonoma_Raceway_hoodie_-_June_2023_-_Sarah_Stierch.jpg
+CC BY 4.0
+
+clothing-sweatshirt.jpg
+원본: Fastcolors-men fashion sweatshirt-back-printed.jpg — FastColors
+https://commons.wikimedia.org/wiki/File:Fastcolors-men_fashion_sweatshirt-back-printed.jpg
+CC BY-SA 2.5
+
+학용품
+------
+stationery-desk.jpg
+원본: Working on a planning session with stationery items, notebook, and colorful pencils on a wooden desk.jpg — Shixart1985
+https://commons.wikimedia.org/wiki/File:Working_on_a_planning_session_with_stationery_items,_notebook,_and_colorful_pencils_on_a_wooden_desk.jpg
+CC BY 2.0
+
+stationery-kanji.jpg
+원본: KanjiPractice.jpg — Kanko*
+https://commons.wikimedia.org/wiki/File:KanjiPractice.jpg
+CC BY 2.0
+
+stationery-eraser.jpg
+원본: まとまるくん (102924259).jpg — Kanko*
+https://commons.wikimedia.org/wiki/File:%E3%81%BE%E3%81%A8%E3%81%BE%E3%82%8B%E3%81%8F%E3%82%93_(102924259).jpg
+CC BY 2.0
