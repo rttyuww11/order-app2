@@ -1,9 +1,9 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import AdminPage from './pages/AdminPage.jsx'
 import HomePage from './pages/HomePage.jsx'
 import ItemDetailPage from './pages/ItemDetailPage.jsx'
 import ItemListPage from './pages/ItemListPage.jsx'
-import { lostItems } from './data/lostItems.js'
+import { apiRequest } from './api.js'
 
 const ITEMS_STORAGE_KEY = 'school-lost-and-found-items'
 const LARGE_TEXT_STORAGE_KEY = 'school-lost-and-found-large-text'
@@ -16,35 +16,38 @@ function readPreference(key) {
   }
 }
 
-function loadItems() {
-  try {
-    const savedItems = window.localStorage.getItem(ITEMS_STORAGE_KEY)
-    if (!savedItems) return lostItems
-    const parsedItems = JSON.parse(savedItems)
-    if (!Array.isArray(parsedItems)) throw new Error('분실물 데이터 형식이 올바르지 않습니다.')
-    const exampleItems = new Map(lostItems.map((item) => [item.id, item]))
-    const normalizedItems = parsedItems.map((item) => ({
-      ...item,
-      category: exampleItems.get(item.id)?.category
-        ?? (item.category === '학용품' ? '기타' : item.category),
-      storageLocation: '학생부실',
-    }))
-      window.localStorage.setItem(ITEMS_STORAGE_KEY, JSON.stringify(normalizedItems))
-      return normalizedItems
-  } catch (error) {
-    console.error('저장된 분실물 데이터를 불러오지 못했습니다.', error)
-    return lostItems
-  }
-}
-
 export default function App() {
   const [screen, setScreen] = useState('home')
   const [selectedCategory, setSelectedCategory] = useState('텀블러')
   const [selectedItem, setSelectedItem] = useState(null)
-  const [items, setItems] = useState(loadItems)
+  const [items, setItems] = useState([])
+  const [itemsLoading, setItemsLoading] = useState(true)
+  const [itemsError, setItemsError] = useState('')
   const [largeText, setLargeText] = useState(() => readPreference(LARGE_TEXT_STORAGE_KEY))
   const [passwordOpen, setPasswordOpen] = useState(false)
   const [passwordError, setPasswordError] = useState('')
+  const [adminPassword, setAdminPassword] = useState('')
+
+  const loadItems = useCallback(async () => {
+    setItemsLoading(true)
+    setItemsError('')
+    try {
+      const result = await apiRequest('/api/items')
+      if (!Array.isArray(result.items)) {
+        throw new Error('분실물 데이터 형식이 올바르지 않습니다.')
+      }
+      setItems(result.items)
+    } catch (error) {
+      console.error('분실물 데이터를 불러오지 못했습니다.', error)
+      setItemsError(error.message || '분실물 데이터를 불러오지 못했습니다.')
+    } finally {
+      setItemsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadItems()
+  }, [loadItems])
 
   function togglePreference(setter, key) {
     setter((current) => {
@@ -56,18 +59,6 @@ export default function App() {
       }
       return next
     })
-  }
-
-  function saveItems(nextItems) {
-    try {
-      window.localStorage.setItem(ITEMS_STORAGE_KEY, JSON.stringify(nextItems))
-      setItems(nextItems)
-      return true
-    } catch (error) {
-      console.error('분실물 정보를 저장하지 못했습니다.', error)
-      window.alert('저장 공간이 부족하거나 브라우저 저장 기능을 사용할 수 없습니다. 사진 크기를 줄여 다시 시도해 주세요.')
-      return false
-    }
   }
 
   function showCategory(category) {
@@ -84,26 +75,92 @@ export default function App() {
     setScreen('list')
   }
 
-  function openAdmin(password) {
-    if (password !== '0417') {
-      setPasswordError('비밀번호가 올바르지 않습니다.')
+  async function openAdmin(password) {
+    setPasswordError('')
+    try {
+      await apiRequest('/api/admin/login', {
+        method: 'POST',
+        body: { password },
+      })
+      setAdminPassword(password)
+    } catch (error) {
+      setPasswordError(
+        error.status === 401
+          ? '비밀번호가 올바르지 않습니다.'
+          : error.message || '관리자 인증에 실패했습니다.',
+      )
       return
     }
-    setPasswordError('')
+
+    try {
+      const savedItems = window.localStorage.getItem(ITEMS_STORAGE_KEY)
+      if (savedItems) {
+        const legacyItems = JSON.parse(savedItems)
+        if (!Array.isArray(legacyItems)) {
+          throw new Error('기존 브라우저 분실물 데이터 형식이 올바르지 않습니다.')
+        }
+        const result = await apiRequest('/api/items/import-local', {
+          method: 'POST',
+          body: legacyItems,
+          adminPassword: password,
+        })
+        setItems(result.items)
+        window.localStorage.removeItem(ITEMS_STORAGE_KEY)
+      }
+    } catch (error) {
+      console.error('기존 브라우저 데이터를 서버로 옮기지 못했습니다.', error)
+      window.alert(`기존 브라우저 데이터를 서버로 옮기지 못했습니다. ${error.message}`)
+    }
+
     setPasswordOpen(false)
     setScreen('admin')
   }
 
-  function addItem(item) {
-    return saveItems([item, ...items])
+  async function addItem(item) {
+    await apiRequest('/api/items', { method: 'POST', body: item, adminPassword })
+    setItems((currentItems) => [item, ...currentItems])
+    return true
   }
 
-  function updateItem(updatedItem) {
-    return saveItems(items.map((item) => (item.id === updatedItem.id ? updatedItem : item)))
+  async function updateItem(updatedItem) {
+    await apiRequest(`/api/items/${encodeURIComponent(updatedItem.id)}`, {
+      method: 'PUT',
+      body: updatedItem,
+      adminPassword,
+    })
+    setItems((currentItems) =>
+      currentItems.map((item) => (item.id === updatedItem.id ? updatedItem : item)),
+    )
+    return true
   }
 
-  function deleteItem(itemId) {
-    return saveItems(items.filter((item) => item.id !== itemId))
+  async function deleteItem(itemId) {
+    await apiRequest(`/api/items/${encodeURIComponent(itemId)}`, {
+      method: 'DELETE',
+      adminPassword,
+    })
+    setItems((currentItems) => currentItems.filter((item) => item.id !== itemId))
+  }
+
+  if (itemsLoading) {
+    return (
+      <div className="app-shell">
+        <main className="content-page">분실물 정보를 불러오는 중입니다.</main>
+      </div>
+    )
+  }
+
+  if (itemsError) {
+    return (
+      <div className="app-shell">
+        <main className="content-page">
+          <p className="form-error" role="alert">{itemsError}</p>
+          <button className="button button--primary" onClick={loadItems} type="button">
+            다시 시도
+          </button>
+        </main>
+      </div>
+    )
   }
 
   return (
@@ -137,7 +194,10 @@ export default function App() {
       {screen === 'admin' && (
         <AdminPage
           items={items}
-          onHome={() => setScreen('home')}
+          onHome={() => {
+            setAdminPassword('')
+            setScreen('home')
+          }}
           onAddItem={addItem}
           onUpdateItem={updateItem}
           onDeleteItem={deleteItem}

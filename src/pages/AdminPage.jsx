@@ -58,7 +58,7 @@ export default function AdminPage({ items, onHome, onAddItem, onUpdateItem, onDe
         status: '보관 중',
       }
 
-      if (onAddItem(item)) form.reset()
+      if (await onAddItem(item)) form.reset()
     } catch (submitError) {
       setError(submitError.message)
     } finally {
@@ -90,7 +90,7 @@ export default function AdminPage({ items, onHome, onAddItem, onUpdateItem, onDe
         description: formData.get('description').trim(),
       }
 
-      if (onUpdateItem(updatedItem)) setEditingItemId(null)
+      if (await onUpdateItem(updatedItem)) setEditingItemId(null)
     } catch (submitError) {
       setEditError(submitError.message)
     } finally {
@@ -98,9 +98,14 @@ export default function AdminPage({ items, onHome, onAddItem, onUpdateItem, onDe
     }
   }
 
-  function removeItem(item) {
+  async function removeItem(item) {
     if (window.confirm(`"${item.name}" 물품을 삭제할까요?`)) {
-      onDeleteItem(item.id)
+      setError('')
+      try {
+        await onDeleteItem(item.id)
+      } catch (deleteError) {
+        setError(deleteError.message || '분실물을 삭제하지 못했습니다.')
+      }
     }
   }
 
